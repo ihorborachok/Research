@@ -3,11 +3,11 @@
 ## y - each column of y should be a vector (2D point); [[1; 2] [3; 4]].
 ## fs - matrix; fs(2, 1, 3) - fundamental solution for 2-nd point in x-vector and 1-st point in y-vector and 3-rd index from p
 function fs = FS2(p, x, y)
-    global gamma;
-    CalculateA();
+    global problem;
+    problem.temp.a = CalculateA();
 
     R = CalculateR(x, y); %vector-column
-    besselX = gamma * R;
+    besselX = problem.model.gamma * R;
     besselAlpha = [0 1]; % must be a vector-row
     besselRes = besselk(besselAlpha, besselX); %firs column: K0; second column: K1
 
@@ -16,7 +16,7 @@ function fs = FS2(p, x, y)
         wRes = arrayfun(@(r) w(pEl, r), R);
         
         fsVector = sum(besselRes .*  [vRes wRes], 2); %multiply by elements: [K0*v  K1*w] and sum by row => result saved in vector => transform to matrix
-        fs(:, :, pEl) = reshape(fsVector, columns(y), columns(x))';
+        fs(:, :, pEl + 1) = reshape(fsVector, columns(y), columns(x))'; % p starts from 0 => index: p + 1
     end
 endfunction
 
@@ -33,14 +33,16 @@ function R = CalculateR(x, y)
 endfunction
 
 function resV = v(p, r)
-  global a;
+  global problem;
+  a = problem.temp.a;
   
   m = 0 : floor(p / 2);
   resV = sum(a(p + 1, 2 .* m + 1) .* (r .^ (2 * m)));
 endfunction
 
 function res = w(p, r)
-  global a;
+  global problem;
+  a = problem.temp.a;
   
   if(p == 0)
     res = 0;
@@ -53,13 +55,13 @@ endfunction
 
 
 function a = CalculateA()
-    global a;
-    global beta;
-    global N;
-    global gamma;
+    global problem;
+    Nt = problem.model.Nt;
+    gamma = problem.model.gamma;
+    beta = problem.model.beta;
 
-    a = zeros(N + 1, N + 1);
-    for p = 0 : N
+    a = zeros(Nt + 1, Nt + 1);
+    for p = 0 : Nt
     
         a(p + 1, 1) = 1;
         
