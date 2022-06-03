@@ -1,6 +1,8 @@
 function MFS2()
     global problem;
 
+    problem.helper.log('MFS started');
+
     p = 0 : problem.model.Nt;
     x = problem.model.collpnts;
     y = problem.model.srcpnts;
@@ -12,6 +14,8 @@ function MFS2()
         b = ComputeB(p);
         problem.temp.mfs.alpha(:, p + 1) = A \ b;
     end
+
+    problem.helper.log('MFS finished');
 end
 
 function b = ComputeB(p)

@@ -3,6 +3,7 @@ function BuldProblem2()
 
     problem.model = BuildModel2();
     problem.example = BuldExample2();
+    problem.helper = BuildHelper();
 
 endfunction
 
@@ -11,7 +12,8 @@ function example = BuldExample2()
     example.gamma1 = @(s) gamma1(s);
     example.gamma2 = @(s) gamma2(s);
     example.PntFs = [0; 4];
-    example.RghtSd = ComputeExampleRightSide_FromFsNarroving(example.PntFs); # right side of the problem: f1, f2
+    example.RghtSd = ComputeExampleRightSide_FromFsNarrowing(example.PntFs); # right side of the problem: f1, f2
+    example.exsln = @(x, t) ComputeExactSolution_FsNarrowing(x, t, example.PntFs); # exact solution
 end
 
 # extarnal boundary
@@ -24,7 +26,11 @@ function gm = ComputeGamma2(s)
     gm = [cos(s); sin(s)-0.5*sin(s).^2+0.5];
 endfunction
 
-function f = ComputeExampleRightSide_FromFsNarroving(pntFs)
+function u = ComputeExactSolution_FsNarrowing(x, t, pntFs)
+    u = 1 / (4 * pi * t) * exp(-norm(x - pntFs)^2 / (4 * t)) * 100;
+endfunction
+
+function f = ComputeExampleRightSide_FromFsNarrowing(pntFs)
     global problem;
 
     p = 0 : problem.model.Nt;
@@ -41,12 +47,16 @@ function model = BuildModel2()
 
     model.kappa = 1;
     model.Nt = 20;
-    model.Nmfs = 64;
+    model.Nmfs = 32;
     model.beta = model.kappa * ones(model.Nt + 1, 1);
     model.gamma = sqrt(model.beta(1));
     model.collpnts = ComputeCollocationPoints(model.Nmfs);
     model.srcpnts = ComputeSourcePoints(model.Nmfs);
 
+endfunction
+
+function helper = BuildHelper()
+    helper.log = @(msg) Log(msg, true); # Log enabled
 endfunction
 
 # x - 2x(Nmfs/2) matrix, each column is 2D collocation point
@@ -65,3 +75,9 @@ function y = ComputeSourcePoints(Nmfs)
 
     y = [0.5 * ComputeGamma1(sGm1) 2 * ComputeGamma2(sGm2)];
 endfunction
+
+function Log(msg, enabled)
+    if (enabled)
+        disp(msg);
+    end
+end

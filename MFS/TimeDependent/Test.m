@@ -1,9 +1,16 @@
 # Temp file with some test algorithm parts
 function Test()
     BuldProblem2();
-    global problem;
+    TestAppSln2();
+endfunction
 
-    MFS2()
+function TestAppSln2()
+    #x = [0; 1]; t = 1:5;
+    x = [[0.7; 0.6] [0.8; 0.7]]; t = 1:3;
+    MFS2();
+    app = AppSln2(x, t)
+    ex = ExSln2(x, t)
+    err = norm(app-ex)
 endfunction
 
 function TestFS2()
