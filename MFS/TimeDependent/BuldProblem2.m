@@ -4,13 +4,16 @@ function BuldProblem2()
     problem.model = BuildModel2();
     problem.example = BuldExample2();
     problem.helper = BuildHelper();
+    problem.results = BuildResults();
+
+    BuildPlotting2();
 
 endfunction
 
 function example = BuldExample2()
     
-    example.gamma1 = @(s) gamma1(s);
-    example.gamma2 = @(s) gamma2(s);
+    example.gamma1 = @(s) ComputeGamma1(s);
+    example.gamma2 = @(s) ComputeGamma2(s);
     example.PntFs = [0; 4];
     example.RghtSd = ComputeExampleRightSide_FromFsNarrowing(example.PntFs); # right side of the problem: f1, f2
     example.exsln = @(x, t) ComputeExactSolution_FsNarrowing(x, t, example.PntFs); # exact solution
@@ -80,4 +83,10 @@ function Log(msg, enabled)
     if (enabled)
         disp(msg);
     end
+end
+
+function results = BuildResults()
+    results.folder = 'D:\Private\LNU\Research\MFS\TimeDependent\results';
+    results.plotDomain = true;
+    results.plotExtensions = {'pdf', 'fig'};
 end

@@ -1,8 +1,14 @@
 # Temp file with some test algorithm parts
 function Test()
     BuldProblem2();
-    TestAppSln2();
+    #TestAppSln2();
+    TestPlot();
 endfunction
+
+function TestPlot()
+    global problem;
+    problem.plotting.plotDomain();
+end
 
 function TestAppSln2()
     #x = [0; 1]; t = 1:5;
