@@ -3,18 +3,31 @@ function BuildPlotting2()
     global problem;
 
     problem.plotting.configure = configurePlotting();
-    problem.plotting.plotDomain = @() plotDomain(problem.plotting.configure);
+    problem.plotting.plotDomain = @() plotDomain();
+    problem.plotting.plotSolutions = @() plotSolutions();
 
-endfunction
+    problem.plotting.plotAll = @() plotAll();
+end
 
 function configure = configurePlotting()
     configure.fontsize = 18;
     configure.linewidth = 3;
     configure.saveDomainToFile = true;
-endfunction
+end
 
-function plotDomain(configure)
+function plotAll()
+    plotDomain();
+    plotSolutions();
+end
+
+function plotDomain()
     global problem;
+
+    if ~problem.results.plotDomain
+        return;
+    end
+
+    configure = problem.plotting.configure;
 
     fig = figure(1);
     
@@ -29,12 +42,85 @@ function plotDomain(configure)
     set(leg, "fontsize", configure.fontsize);
     axis('equal');
 
-    if problem.results.plotDomain
-        fileName = strcat(problem.results.folder, '\', 'domain');
-        saveToFile(fig, fileName);
-    endif
-
+    fileName = strcat(problem.results.folder, '\', 'domain');
+    saveToFile(fig, fileName);
+    
 endfunction
+
+# plot approximate \ exact solutions
+function plotSolutions()
+    global problem;
+
+    s = problem.results.plotPnts.s;
+    x = problem.results.plotPnts.x;
+    nu = problem.results.plotPnts.nu;
+    t = problem.results.plotPnts.t;
+
+    if problem.results.plotSln && problem.results.plotSlnNd
+
+        [app, appd] = AppSln2(x, t, nu);
+        [ex, exd] = problem.example.exsln(x, t, nu);
+    
+    elseif problem.results.plotSln
+    
+        [app, ~] = AppSln2(x, t);
+        [ex, ~] = problem.example.exsln(x, t);
+    
+    elseif problem.results.plotSlnNd
+    
+        [~, appd] = AppSln2(x, t, nu);
+        [~, exd] = problem.example.exsln(x, t, nu);
+    
+    end
+
+    [s, t] = meshgrid(s, t);
+
+    if problem.results.plotSln
+        plotAs3D(app', s, t, figure(2), BuildPlot3DObjConfig(true, false));
+        plotAs3D(ex', s, t, figure(3), BuildPlot3DObjConfig(true, true));
+    end
+    if problem.results.plotSlnNd
+        plotAs3D(app', s, t, figure(4), BuildPlot3DObjConfig(false, false));
+        plotAs3D(ex', s, t, figure(5), BuildPlot3DObjConfig(false, true));
+    end
+end
+
+function config = BuildPlot3DObjConfig(isSln, isEx)
+    global problem;
+
+    if isSln
+        config.zLabel = 'u';
+    else
+        config.zLabel = '\partial u \ \partial\nu';
+    end
+
+    fName = [problem.results.folder '\u'];
+    if ~isSln
+        fName = [fName 'd'];
+    end
+    fName = [fName, '_', num2str(problem.model.Nt), '_' num2str(problem.model.Nmfs), '_'];
+
+    if isEx
+        fName = [fName, 'ex'];
+    else
+        fName = [fName, 'app'];
+    end
+
+    config.fName = fName;
+end
+
+# plot u(x(s), t) function as 3D object
+function plotAs3D(u, s, t, fig, objConfig)
+    global problem;
+    configure = problem.plotting.configure;
+
+    surf(s, t, u, 'FaceColor','interp','EdgeColor','black','FaceLighting','none');
+    xlabel('s'); ylabel('t'); zlabel(objConfig.zLabel);
+    colormap gray;
+    set(get(fig, "currentaxes"), "fontsize", configure.fontsize);
+
+    saveToFile(fig, objConfig.fName);
+end
 
 function saveToFile(fig, fname)
     global problem
