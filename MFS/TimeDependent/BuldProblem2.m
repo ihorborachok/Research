@@ -7,6 +7,7 @@ function BuldProblem2(config)
     problem.results = BuildResults();
 
     BuildPlotting2();
+    BuildNorms2();
 
 endfunction
 
@@ -124,35 +125,9 @@ function results = BuildResults()
     results.plotSln = true; # plot solution
     results.plotSlnNd = true; # plot normal derivate
 
-    results.plotPnts.s = BuildPlotPntsS();
-    results.plotPnts.x = BuildPlotPntsX();
-    results.plotPnts.nu = BuildPlotPntsNu();
-    results.plotPnts.t = BuildPlotPntsT();
-
+    results.plotT = 10;
+    results.plotN = 10;
+    
+    results.normT = 20;
+    results.normN = 32;
 end
-
-function s = BuildPlotPntsS()
-    global problem;
-
-    n = 10;
-    h = pi / n;
-    s = h * (0 : 2 * n - 1);
-endfunction
-
-function x = BuildPlotPntsX()
-    global problem;
-    x = problem.example.gamma1(BuildPlotPntsS()); #todo: hardcoded gm1
-endfunction
-
-function nu = BuildPlotPntsNu()
-    global problem;
-    nu = problem.example.gamma1d(BuildPlotPntsS()); #todo: hardcoded gm1
-endfunction
-
-function t = BuildPlotPntsT()
-    global problem;
-
-    nt = 10;
-    ht = problem.example.maxT / nt;
-    t = ht * (1 : nt); # starts from 0 or 1?
-endfunction

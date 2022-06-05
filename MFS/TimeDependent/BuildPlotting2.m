@@ -1,7 +1,8 @@
 # run after build problem
 function BuildPlotting2()
     global problem;
-
+    
+    problem.plotting.plotPnts = BuildPlotPnts(); 
     problem.plotting.configure = configurePlotting();
     problem.plotting.plotDomain = @() plotDomain();
     problem.plotting.plotSolutions = @() plotSolutions();
@@ -9,10 +10,19 @@ function BuildPlotting2()
     problem.plotting.plotAll = @() plotAll();
 end
 
+function plotPnts = BuildPlotPnts()
+    global problem;
+
+    s = BuildPlotPntsS();
+    plotPnts.s = s;
+    plotPnts.x = BuildPntsX(s);
+    plotPnts.nu = BuildPntsNu(s);
+    plotPnts.t = BuildPlotPntsT();
+end
+
 function configure = configurePlotting()
     configure.fontsize = 18;
     configure.linewidth = 3;
-    configure.saveDomainToFile = true;
 end
 
 function plotAll()
@@ -51,10 +61,10 @@ endfunction
 function plotSolutions()
     global problem;
 
-    s = problem.results.plotPnts.s;
-    x = problem.results.plotPnts.x;
-    nu = problem.results.plotPnts.nu;
-    t = problem.results.plotPnts.t;
+    s = problem.plotting.plotPnts.s;
+    x = problem.plotting.plotPnts.x;
+    nu = problem.plotting.plotPnts.nu;
+    t = problem.plotting.plotPnts.t;
 
     if problem.results.plotSln && problem.results.plotSlnNd
 
@@ -140,4 +150,30 @@ function saveToFile(fig, fname)
         end
 
     end
+endfunction
+
+function s = BuildPlotPntsS()
+    global problem;
+
+    n = problem.results.plotN;
+    h = pi / n;
+    s = h * (0 : 2 * n - 1);
+endfunction
+
+function x = BuildPntsX(s)
+    global problem;
+    x = problem.example.gamma1(s); #todo: hardcoded gm1
+endfunction
+
+function nu = BuildPntsNu(s)
+    global problem;
+    nu = problem.example.gamma1d(s); #todo: hardcoded gm1
+endfunction
+
+function t = BuildPlotPntsT()
+    global problem;
+
+    nt = problem.results.plotT;
+    ht = problem.example.maxT / nt;
+    t = ht * (1 : nt); # starts from 1
 endfunction

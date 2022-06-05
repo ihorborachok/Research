@@ -35,8 +35,7 @@ function TestBatchPlot()
 end
 
 function TestBatchNorm()
-    
-    NtLst = 10*[5:7]; NmfsLst = 2.^ [7:9];
+    NtLst = 10*[1:2]; NmfsLst = 2.^ [2:3];
     err = [NmfsLst]; errd = [NmfsLst];
 
     for Nt = NtLst
@@ -49,21 +48,15 @@ function TestBatchNorm()
             BuldProblem2(config);
 
             global problem;
-            problem.helper.log(['Nt = ', num2str(Nt), ',     Nmfs = ', num2str(Nmfs)]);
+            problem.helper.log(['Nt = ', num2str(Nt), ', Nmfs = ', num2str(Nmfs)]);
+            
             MFS2();
-            
-            s = problem.results.plotPnts.s;
-            x = problem.results.plotPnts.x;
-            nu = problem.results.plotPnts.nu;
-            t = problem.results.plotPnts.t;
+            [unrm, udnrm] = problem.results.computeNorm();
 
-            [app, appd] = AppSln2(x, t, nu);
-            [ex, exd] = problem.example.exsln(x, t, nu);
+            problem.helper.log(['e_u = ', num2str(unrm), ', e_ud = ', num2str(udnrm)]);
 
-            errdPrnt = norm(appd-exd)
-            
-            errR = [errR norm(app-ex)];
-            errdR = [errdR norm(appd-exd)];
+            errR = [errR unrm];
+            errdR = [errdR udnrm];
         end
         err = [err; errR]; errd = [errd; errdR];
     end
