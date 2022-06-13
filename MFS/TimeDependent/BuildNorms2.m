@@ -37,7 +37,7 @@ endfunction
 
 function nu = BuildPntsNu(s)
     global problem;
-    nu = problem.example.gamma1d(s); #todo: hardcoded gm1
+    nu = problem.example.nu1(s); #todo: hardcoded gm1
 endfunction
 
 function t = BuildNormPntsT()

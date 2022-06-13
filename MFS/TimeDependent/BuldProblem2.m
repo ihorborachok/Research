@@ -16,11 +16,11 @@ function example = BuldExample2()
     example.gamma1 = @(s) ComputeGamma1(s);
     example.gamma2 = @(s) ComputeGamma2(s);
 
-    example.gamma1d = @(s) ComputeGamma1Derivative(s);
-    example.gamma2d = @(s) ComputeGamma2Derivative(s);
+    example.nu1 = @(s) ComputeNu1(s);
+    example.nu2 = @(s) ComputeNu2(s);
     
     example.PntFs = [0; 4];
-    example.RghtSd = ComputeExampleRightSide_FromFsNarrowing(example.PntFs); # right side of the problem: f1, f2
+    example.RghtSd = ComputeRightSide(example.PntFs);
     example.exsln = @(x, t, nu) ComputeExSln(x, t, nu);
     example.maxT = 5;
 end
@@ -54,16 +54,32 @@ function gm = ComputeGamma2(s)
     gm = [cos(s); sin(s)-0.5*sin(s).^2+0.5];
 endfunction
 
-function gmd = ComputeGamma1Derivative(s)
+function nu = ComputeNu1(s)
     gmd = [-0.6*sin(s); 0.5*cos(s)];
-endfunction
+    nu = ComputeNu(gmd);
+end
 
-# internal boundary
-function gmd = ComputeGamma2Derivative(s)
+function nu = ComputeNu2(s)
     gmd = [-sin(s); -0.5*sin(2.*s)+cos(s)];
-endfunction
+    nu = ComputeNu(gmd);
+end
 
-function f = ComputeExampleRightSide_FromFsNarrowing(pntFs)
+function nu = ComputeNu(gmd)
+    nrm = sqrt(gmd(1, :).^2 + gmd(2, :).^2);
+    nu = [-gmd(2, :) ; gmd(1, :)] ./ nrm;
+end
+
+function f = ComputeRightSide(pntFs)
+    global main;
+
+    if main.type.DD
+        f = ComputeExampleRightSide_FromFsNarrowing(pntFs);
+    elseif main.type.C
+        f = [ComputeExampleRightSide_FromFsNarrowing(pntFs); ComputeExampleRightSide_FromFsDNarrowing(pntFs)];
+    end
+end
+
+function f = ComputeExampleRightSide_FromFsNarrowing(pntFs) # right side of the problem: f1, f2
     global problem;
 
     p = 0 : problem.model.Nt;
@@ -74,7 +90,21 @@ function f = ComputeExampleRightSide_FromFsNarrowing(pntFs)
 
     mult = 1 / (2 * pi) * 100;
     f(:, :) = nrvfs(:, 1, :) * mult;
-endfunction
+end
+
+function f = ComputeExampleRightSide_FromFsDNarrowing(pntFs)  # right side of the problem: f2, g2
+    global problem;
+
+    p = 0 : problem.model.Nt;
+    x = problem.model.collpnts;
+    nu = problem.model.collnu;
+    y = pntFs;
+
+    [~, nrvfs] = FS2(p, x, y, nu);
+
+    mult = 1 / (2 * pi) * 100;
+    f(:, :) = nrvfs(:, 1, :) * mult;
+end
 
 function model = BuildModel2(config)
 
@@ -83,8 +113,8 @@ function model = BuildModel2(config)
     model.Nmfs = config.Nmfs;
     model.beta = model.kappa * ones(model.Nt + 1, 1);
     model.gamma = sqrt(model.beta(1));
-    model.collpnts = ComputeCollocationPoints(model.Nmfs);
     model.srcpnts = ComputeSourcePoints(model.Nmfs);
+    [model.collpnts, model.collnu] = ComputeCollocationPoints(model.Nmfs);
 
 endfunction
 
@@ -92,22 +122,49 @@ function helper = BuildHelper()
     helper.log = @(msg) Log(msg, true); # Log enabled
 endfunction
 
-# x - 2x(Nmfs/2) matrix, each column is 2D collocation point
-function x = ComputeCollocationPoints(Nmfs)
-    idx = 1 : (Nmfs / 2);
-    s = idx * 4 * pi / (Nmfs + 1);
-
-    x = [ComputeGamma1(s) ComputeGamma2(s)];
-endfunction
-
 # y - 2xNmfs matrix, each column is 2D source point
 function y = ComputeSourcePoints(Nmfs)
+
     step = 2 * pi / Nmfs;
     sGm1 = (1 : 2 : (Nmfs - 1)) * step;
     sGm2 = (2 : 2 : Nmfs) * step;
 
-    y = [0.5 * ComputeGamma1(sGm1) 2 * ComputeGamma2(sGm2)];
+    y = [0.3 * ComputeGamma1(sGm1) 3 * ComputeGamma2(sGm2)];
+
+
+    #step = 2 * pi / Nmfs;
+    #sGm11 = (1 : 4 : Nmfs) * step;
+    #sGm12 = (2 : 4 : Nmfs) * step;
+    #sGm21 = (3 : 4 : Nmfs) * step;
+    #sGm22 = (4 : 4 : Nmfs) * step;
+
+    #y = [0.4 * ComputeGamma1(sGm11) 3 * ComputeGamma2(sGm21) 4 * ComputeGamma2(sGm12) 2 * ComputeGamma2(sGm22)];
+
 endfunction
+
+# x - 2 x Nmfs matrix, each column is 2D collocation point
+function [x, nu] = ComputeCollocationPoints(Nmfs)
+    global main;
+    
+    if main.type.DD # Dirichlet problem; Nmfs / 2 points are on gm1, and Nmfs / 2 points - on gm2
+
+        idx = 1 : (Nmfs / 2);
+        s = idx * 4 * pi / (Nmfs + 1);
+
+        x = [ComputeGamma1(s) ComputeGamma2(s)];
+        nu = [];
+
+    elseif main.type.C # Cauchy problem; Nmfs / 2 points are on gm2
+
+        idx = 1 : (Nmfs / 2);
+        s = idx * 4 * pi / (Nmfs + 1);
+
+        x = ComputeGamma2(s);
+        nu = ComputeNu2(s);
+
+    end
+
+end
 
 function Log(msg, enabled)
     if (enabled)

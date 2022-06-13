@@ -1,5 +1,8 @@
 function Main
-    NtTstLst = 10*[1:2]; NmfsTstLst = 2.^ [2:3]; # lists of test points
+    ConfigureMain();
+    global main;
+
+    NtTstLst = [20]; NmfsTstLst = [32]; # lists of test parameters
     err = [NmfsTstLst]; errd = [NmfsTstLst];
 
     for Nt = NtTstLst
@@ -16,7 +19,10 @@ function Main
             
             MFS2();
             [unrm, udnrm] = problem.results.computeNorm();
-            problem.plotting.plotAll();
+
+            if main.plot
+                problem.plotting.plotAll();
+            end
 
             problem.helper.log(['e_u = ', num2str(unrm), ', e_ud = ', num2str(udnrm)]);
 
@@ -28,4 +34,14 @@ function Main
     err = [frstCol err]; errd = [frstCol errd];
     err
     errd
+end
+
+function ConfigureMain
+    global main
+
+    # Type of the problem
+    main.type.DD = false; # Dirichlet cond on gm1, Dirichlet cond on gm2
+    main.type.C = true; # Cauchy problem on gm2
+
+    main.plot = false;
 end
